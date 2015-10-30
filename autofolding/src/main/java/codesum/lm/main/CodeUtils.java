@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
 
@@ -23,239 +24,245 @@ import com.google.common.collect.Range;
 
 public class CodeUtils {
 
-	/**
-	 * Save tokens belonging to each node of the file on a separate line, where
-	 * the line number is the nodeID.
-	 */
-	public static void saveFileTokensByNodeID(final Settings set)
-			throws IOException {
+    /**
+     * Save tokens belonging to each node of the file on a separate line, where
+     * the line number is the nodeID.
+     */
+    public static List<String> saveFileTokensByNodeID(final Settings set)
+            throws IOException {
+        List<String> projectWitnNoJavaFiles = new LinkedList<>();
+        // For all projects
+        for (final String curProj : set.projects) {
 
-		// For all projects
-		for (final String curProj : set.projects) {
+            System.out.println("\n===== Project " + curProj);
 
-			System.out.println("\n===== Project " + curProj);
+            // Create output folder
+            final String outFolder = set.baseFolder + "TopicSum/Source/"
+                    + curProj + "/";
+            (new File(outFolder)).mkdirs();
 
-			// Create output folder
-			final String outFolder = set.baseFolder + "TopicSum/Source/"
-					+ curProj + "/";
-			(new File(outFolder)).mkdirs();
+            // Get all java files in source folder
+            final List<File> files = (List<File>) FileUtils.listFiles(new File(
+                            set.projectsFolder + "/" + curProj + "/"),
+                    new String[]{"java"}, true);
+            if (files.size() == 0) {
+                projectWitnNoJavaFiles.add(curProj);
+                System.out.println("No java files in projectName" + curProj);
+                continue;
+            }
 
-			// Get all java files in source folder
-			final List<File> files = (List<File>) FileUtils.listFiles(new File(
-					set.projectsFolder + curProj + "/"),
-					new String[] { "java" }, true);
+            int count = 0;
+            for (final File file : files) {
 
-			int count = 0;
-			for (final File file : files) {
+                // Ignore empty files
+                if (file.length() == 0)
+                    continue;
 
-				// Ignore empty files
-				if (file.length() == 0)
-					continue;
+                if (count % 50 == 0)
+                    System.out.println("At file " + count + " of "
+                            + files.size());
+                count++;
 
-				if (count % 50 == 0)
-					System.out.println("At file " + count + " of "
-							+ files.size());
-				count++;
+                String originalPath = file.getPath();
+                String outPutRelativePath = StringUtils.removeStart(
+                        originalPath, set.projectsFolder + curProj + "/");
+                String outputFilePath = outFolder + outPutRelativePath;
 
-				String originalPath = file.getPath();
-				String outPutRelativePath = StringUtils.removeStart(
-						originalPath, set.projectsFolder + curProj + "/");
-				String outputFilePath = outFolder + outPutRelativePath;
+                // Write out file with one token line per foldable node
+                final File outFile = new File(outputFilePath);
+                File parent = outFile.getParentFile();
+                if (!parent.exists() && !parent.mkdirs()) {
+                    throw new IllegalStateException("Couldn't create dir: " + parent);
+                }
+                final PrintWriter out = new PrintWriter(outFile, "UTF-8");
 
-				// Write out file with one token line per foldable node
-				final File outFile = new File(outputFilePath);
-				File parent = outFile.getParentFile();
-				if(!parent.exists() && !parent.mkdirs()){
-				    throw new IllegalStateException("Couldn't create dir: " + parent);
-				}
-				final PrintWriter out = new PrintWriter(outFile, "UTF-8");
+                List<String> tokenList = getTokenList(file, set);
 
-				List<String> tokenList = getTokenList(file, set);
-				
-				for(String token: tokenList){
-					out.print(token + " ");
-					out.print("\n");
-				}
+                for (String token : tokenList) {
+                    out.print(token + " ");
+                    out.print("\n");
+                }
 
-				out.close();
-			}
-		}
-	}
+                out.close();
+            }
+        }
+        return projectWitnNoJavaFiles;
+    }
 
-	/**
-	 * Get nodewise token list for a file.
-	 */
-	public static List<String> getTokenList(File file, Settings set) {
-		// Create folded tree and populate nodes with term vectors
-		final TreeCreatorVisitor tcv = new TreeCreatorVisitor();
+    /**
+     * Get nodewise token list for a file.
+     */
+    public static List<String> getTokenList(File file, Settings set) {
+        // Create folded tree and populate nodes with term vectors
+        final TreeCreatorVisitor tcv = new TreeCreatorVisitor();
 
-		tcv.process(getAST(file), file, null, null, set);
+        tcv.process(getAST(file), file, null, null, set);
 
-		List<String> tokenList = new ArrayList<String>();
-		// Save foldable node tokens ordered by nodeID
-		for (int nodeID = 0; nodeID < tcv.getTree().getNodeCount(); nodeID++) {
-			StringBuilder sb = new StringBuilder();
-			for (final String token : tcv.getIDTokens().get(nodeID)){
-				sb.append(token + " ");
-			}
-			tokenList.add(sb.toString());
-		}
-		
-		return tokenList;
-	}
+        List<String> tokenList = new ArrayList<String>();
+        // Save foldable node tokens ordered by nodeID
+        for (int nodeID = 0; nodeID < tcv.getTree().getNodeCount(); nodeID++) {
+            StringBuilder sb = new StringBuilder();
+            for (final String token : tcv.getIDTokens().get(nodeID)) {
+                sb.append(token + " ");
+            }
+            tokenList.add(sb.toString());
+        }
 
-	/**
-	 * Get AST for source file
-	 *
-	 * @author Jaroslav Fowkes
-	 */
-	public static CompilationUnit getAST(final File fin) {
+        return tokenList;
+    }
 
-		CompilationUnit cu = null;
-		final JavaASTExtractor ext = new JavaASTExtractor(false, true);
-		try {
-			cu = ext.getAST(fin);
-		} catch (final Exception exc) {
-			System.out.println("=+=+=+=+= AST Parse " + exc);
-		}
-		return cu;
-	}
+    /**
+     * Get AST for source file
+     *
+     * @author Jaroslav Fowkes
+     */
+    public static CompilationUnit getAST(final File fin) {
 
-	/**
-	 * Save folds or tokens to file using Kryo serializer
-	 *
-	 * @author Jaroslav Fowkes
-	 */
-	public static <K, V> void saveFolds(final HashMap<K, V> folds,
-			final String path) {
+        CompilationUnit cu = null;
+        final JavaASTExtractor ext = new JavaASTExtractor(false, true);
+        try {
+            cu = ext.getAST(fin);
+        } catch (final Exception exc) {
+            System.out.println("=+=+=+=+= AST Parse " + exc);
+        }
+        return cu;
+    }
 
-		try {
-			Serializer.getSerializer().serialize(folds, path);
-			System.out.printf("Folds saved in " + path);
+    /**
+     * Save folds or tokens to file using Kryo serializer
+     *
+     * @author Jaroslav Fowkes
+     */
+    public static <K, V> void saveFolds(final HashMap<K, V> folds,
+                                        final String path) {
 
-		} catch (final SerializationException e) {
-			e.printStackTrace();
-		}
-	}
+        try {
+            Serializer.getSerializer().serialize(folds, path);
+            System.out.printf("Folds saved in " + path);
 
-	/**
-	 * Save folded file
-	 *
-	 * @author Jaroslav Fowkes
-	 */
-	public static void saveStringFile(final String fileString, final File fout) {
+        } catch (final SerializationException e) {
+            e.printStackTrace();
+        }
+    }
 
-		try {
-			FileUtils.writeStringToFile(fout, fileString);
-		} catch (final IOException e) {
-			e.printStackTrace();
-		}
-	}
+    /**
+     * Save folded file
+     *
+     * @author Jaroslav Fowkes
+     */
+    public static void saveStringFile(final String fileString, final File fout) {
 
-	/**
-	 * Read in file as String
-	 *
-	 * @author Jaroslav Fowkes
-	 */
-	public static String readFileString(final File fin) {
+        try {
+            FileUtils.writeStringToFile(fout, fileString);
+        } catch (final IOException e) {
+            e.printStackTrace();
+        }
+    }
 
-		String fileString = null;
-		try {
-			fileString = FileUtils.readFileToString(fin);
-		} catch (final IOException e) {
-			e.printStackTrace();
-		}
+    /**
+     * Read in file as String
+     *
+     * @author Jaroslav Fowkes
+     */
+    public static String readFileString(final File fin) {
 
-		return fileString;
-	}
+        String fileString = null;
+        try {
+            fileString = FileUtils.readFileToString(fin);
+        } catch (final IOException e) {
+            e.printStackTrace();
+        }
 
-	/**
-	 * Return folded file as String (there must be a nicer way to do this)
-	 *
-	 * @author Jaroslav Fowkes based on Razvan Ranca's Python code
-	 */
-	public static String getFolded(final String fileString,
-			final HashMap<Range<Integer>, Boolean> folds,
-			final TreeCreatorVisitor tcv) {
+        return fileString;
+    }
 
-		// Set up containers for removed chars, dots comments and javadocs
-		final ArrayList<Integer> rems = Lists.newArrayList();
-		final ArrayList<Integer> dots = Lists.newArrayList();
-		final HashMap<Integer, String> blockComments = Maps.newHashMap();
-		final HashMap<Integer, String> lineComments = Maps.newHashMap();
-		final HashMap<Integer, String> javadocs = Maps.newHashMap();
+    /**
+     * Return folded file as String (there must be a nicer way to do this)
+     *
+     * @author Jaroslav Fowkes based on Razvan Ranca's Python code
+     */
+    public static String getFolded(final String fileString,
+                                   final HashMap<Range<Integer>, Boolean> folds,
+                                   final TreeCreatorVisitor tcv) {
 
-		// Fill containers with char ranges
-		for (final Entry<Range<Integer>, Boolean> entry : folds.entrySet()) {
-			if (entry.getValue()) {
-				rems.addAll(range(entry.getKey().lowerEndpoint() + 1, entry
-						.getKey().upperEndpoint() + 2));
-				dots.add(entry.getKey().lowerEndpoint());
-			}
-		}
+        // Set up containers for removed chars, dots comments and javadocs
+        final ArrayList<Integer> rems = Lists.newArrayList();
+        final ArrayList<Integer> dots = Lists.newArrayList();
+        final HashMap<Integer, String> blockComments = Maps.newHashMap();
+        final HashMap<Integer, String> lineComments = Maps.newHashMap();
+        final HashMap<Integer, String> javadocs = Maps.newHashMap();
 
-		// Discern javadocs and block comments
-		if (tcv != null) {
-			for (final Entry<Range<Integer>, String> entry : tcv.blockCommentFolds
-					.entrySet())
-				blockComments.put(entry.getKey().lowerEndpoint(),
-						entry.getValue());
-			for (final Entry<Range<Integer>, String> entry : tcv.lineCommentFolds
-					.entrySet())
-				lineComments.put(entry.getKey().lowerEndpoint(),
-						entry.getValue());
-			for (final Entry<Range<Integer>, String> entry : tcv.javadocFolds
-					.entrySet())
-				javadocs.put(entry.getKey().lowerEndpoint(), entry.getValue());
-		}
+        // Fill containers with char ranges
+        for (final Entry<Range<Integer>, Boolean> entry : folds.entrySet()) {
+            if (entry.getValue()) {
+                rems.addAll(range(entry.getKey().lowerEndpoint() + 1, entry
+                        .getKey().upperEndpoint() + 2));
+                dots.add(entry.getKey().lowerEndpoint());
+            }
+        }
 
-		// Print relevant folded markers in string
-		final StringBuffer stringBuffer = new StringBuffer();
-		for (int i = 0; i <= fileString.length(); i++) {
-			if (rems.contains(i))
-				continue;
-			if (dots.contains(i)) {
-				if (javadocs.containsKey(i))
-					stringBuffer.append(" /**" + javadocs.get(i) + "..*/");
-				else if (blockComments.containsKey(i))
-					stringBuffer.append(" /*" + blockComments.get(i) + "..*/");
-				else if (lineComments.containsKey(i))
-					stringBuffer.append(" //" + lineComments.get(i) + "...");
-				else
-					stringBuffer.append(" {...}");
-				continue;
-			}
-			if (i != 0)
-				stringBuffer.append(fileString.charAt(i - 1));
-		}
+        // Discern javadocs and block comments
+        if (tcv != null) {
+            for (final Entry<Range<Integer>, String> entry : tcv.blockCommentFolds
+                    .entrySet())
+                blockComments.put(entry.getKey().lowerEndpoint(),
+                        entry.getValue());
+            for (final Entry<Range<Integer>, String> entry : tcv.lineCommentFolds
+                    .entrySet())
+                lineComments.put(entry.getKey().lowerEndpoint(),
+                        entry.getValue());
+            for (final Entry<Range<Integer>, String> entry : tcv.javadocFolds
+                    .entrySet())
+                javadocs.put(entry.getKey().lowerEndpoint(), entry.getValue());
+        }
 
-		// Return folded string
-		return stringBuffer.toString();
+        // Print relevant folded markers in string
+        final StringBuffer stringBuffer = new StringBuffer();
+        for (int i = 0; i <= fileString.length(); i++) {
+            if (rems.contains(i))
+                continue;
+            if (dots.contains(i)) {
+                if (javadocs.containsKey(i))
+                    stringBuffer.append(" /**" + javadocs.get(i) + "..*/");
+                else if (blockComments.containsKey(i))
+                    stringBuffer.append(" /*" + blockComments.get(i) + "..*/");
+                else if (lineComments.containsKey(i))
+                    stringBuffer.append(" //" + lineComments.get(i) + "...");
+                else
+                    stringBuffer.append(" {...}");
+                continue;
+            }
+            if (i != 0)
+                stringBuffer.append(fileString.charAt(i - 1));
+        }
 
-	}
+        // Return folded string
+        return stringBuffer.toString();
 
-	/**
-	 * An implementation of Python's range function
-	 *
-	 * @author Jaroslav Fowkes
-	 */
-	public static ArrayList<Integer> range(final int start, final int stop,
-			final int increment) {
-		final ArrayList<Integer> result = Lists.newArrayList();
+    }
 
-		for (int i = 0; i < stop - start; i += increment)
-			result.add(start + i);
+    /**
+     * An implementation of Python's range function
+     *
+     * @author Jaroslav Fowkes
+     */
+    public static ArrayList<Integer> range(final int start, final int stop,
+                                           final int increment) {
+        final ArrayList<Integer> result = Lists.newArrayList();
 
-		return result;
-	}
+        for (int i = 0; i < stop - start; i += increment)
+            result.add(start + i);
 
-	public static ArrayList<Integer> range(final int start, final int stop) {
-		return range(start, stop, 1);
-	}
-	
-	public static String getRelativePath(File file, String relativeTo){
-		String prefix = StringUtils.substringBefore(file.getPath(), relativeTo);
-		return StringUtils.removeStart(file.getPath(), prefix);
-	}
+        return result;
+    }
+
+    public static ArrayList<Integer> range(final int start, final int stop) {
+        return range(start, stop, 1);
+    }
+
+    public static String getRelativePath(File file, String relativeTo) {
+        String prefix = StringUtils.substringBefore(file.getPath(), relativeTo);
+        return StringUtils.removeStart(file.getPath(), prefix);
+    }
 
 }

@@ -1,8 +1,11 @@
 package codesum.lm.tui;
 
+import codesum.lm.main.CodeSummarizationUtils;
 import codesum.lm.main.CodeUtils;
 import codesum.lm.main.Settings;
 import codesum.lm.topicsum.GibbsSampler;
+import codesum.lm.topicsum.Repository;
+import codesum.lm.topicsum.TopicModel;
 import codesum.lm.topicsum.TopicSum;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
@@ -12,9 +15,13 @@ import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 import java.io.FilenameFilter;
+import java.io.IOException;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by keerathj on 28/10/15.
@@ -62,33 +69,36 @@ public class CodeSummarization {
 
     }
 
-    public static void codeSummarization(final String workingDir,
-                                         final String projectsDir,
-                                         final int iterations,
-                                         final int compressionRatio,
-                                         final int backOffTopic,
-                                         final boolean ignoreTestFiles) throws Exception {
+    private static void codeSummarization(final String workingDir,
+                                          final String projectsDir,
+                                          final int iterations,
+                                          final int compressionRatio,
+                                          final int backOffTopic,
+                                          final boolean ignoreTestFiles) throws Exception {
 
-        // Get all projects in projects directory
-        final File projDir = new File(projectsDir);
-        final String[] projects = projDir.list(new FilenameFilter() {
-            @Override
-            public boolean accept(final File current, final String name) {
-                return new File(current, name).isDirectory();
-            }
-        });
+
+        final String[] projectsZip = CodeSummarizationUtils.getZipProjectList(projectsDir);
+        Map<String, Repository> repoNameVsRepoProperty = CodeSummarizationUtils.repoNameParser(projectsZip);
+        List<List<String>> projectsZipLists = Lists.partition(Arrays.asList(projectsZip), 10);
+        List<TopicModel> topicModelList = new ArrayList<TopicModel>();
         int count = 1;
-        List<List<String>> projectLists = Lists.partition(Arrays.asList(projects), 20);
-        for (List<String> projectsList : projectLists) {
+        for (List<String> projectsList : projectsZipLists) {
+            CodeSummarizationUtils.unzipProjects(projectsList, projectsDir);
+            // Get all projects in projects directory
+            final File unzipProjDir = new File(projectsDir + "_unzip");
+            final String[] projects = CodeSummarizationUtils.getUnzipProjectList(unzipProjDir);
             System.out.println("Batch" + count);
             System.out.println("==========================");
-            count ++;
-            GibbsSampler gibbsSampler = TrainTopicModel.trainTopicModel(workingDir, projectsDir,
-                    projectsList.toArray(new String[projectsList.size()]), iterations);
-            for (String projectPath : projectsList) {
-                ListSalientFiles.listSalientFiles(projectsDir, projectPath, compressionRatio,
-                        backOffTopic, gibbsSampler, ignoreTestFiles);
+            count++;
+            GibbsSampler gibbsSampler = TrainTopicModel.trainTopicModel(workingDir, projectsDir + "_unzip",
+                    projects, iterations);
+            System.out.println("Size of the projects for file listing is  " + gibbsSampler.getCorpus().getProjects().length);
+            for (String projectPath : gibbsSampler.getCorpus().getProjects()) {
+                topicModelList.add(ListSalientFiles.listSalientFiles(projectsDir + "_unzip", projectPath, compressionRatio,
+                        backOffTopic, gibbsSampler, ignoreTestFiles));
             }
+            FileUtils.deleteDirectory(unzipProjDir);
         }
     }
+
 }

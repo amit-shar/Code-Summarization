@@ -1,18 +1,15 @@
 package codesum.lm.tui;
 
-import java.io.File;
-import java.io.FilenameFilter;
-
-import codesum.lm.topicsum.GibbsSampler;
-import org.apache.commons.io.FileUtils;
-
 import codesum.lm.main.CodeUtils;
 import codesum.lm.main.Settings;
+import codesum.lm.topicsum.GibbsSampler;
 import codesum.lm.topicsum.TopicSum;
+import org.apache.commons.io.FileUtils;
 
-import com.beust.jcommander.JCommander;
-import com.beust.jcommander.Parameter;
-import com.beust.jcommander.ParameterException;
+import java.io.File;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 public class TrainTopicModel {
 
@@ -56,11 +53,12 @@ public class TrainTopicModel {
      * @param workingDir  working directory where the topic model creates necessary
      *                    files
      * @param projectsDir directory containing project subdirectories
+     * @param projects
      * @param iterations  number of iterations for the topic model
      */
     public static GibbsSampler trainTopicModel(final String workingDir,
-                                       final String projectsDir, String[] projects,
-                                       final int iterations) throws Exception {
+                                               final String projectsDir, String[] projects,
+                                               final int iterations) throws Exception {
 
         System.out
                 .println("TASSAL: Tree-based Autofolding Software Summarization Algorithm");
@@ -75,8 +73,13 @@ public class TrainTopicModel {
         final Settings set = new Settings(workingDir, projectsDir, projects);
 
         // Create topic model base files in workingDir/TopicSum/Source/
-        CodeUtils.saveFileTokensByNodeID(set);
-
+        List<String> remove = CodeUtils.saveFileTokensByNodeID(set);
+        //remove projects which do not have any java files
+        if (remove.size() > 0) {
+            List<String> project = new LinkedList<String>(Arrays.asList(projects));
+            project.removeAll(remove);
+            projects = project.toArray(new String[project.size()]);
+        }
         // Train topic model and serialize model to
         // workingDir/TopicSum/Source/SamplerState.ser
         GibbsSampler gibbsSampler = TopicSum.trainTopicSum(workingDir + "TopicSum/Source/", projects,
