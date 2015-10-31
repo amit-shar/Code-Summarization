@@ -12,37 +12,6 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class TrainTopicModel {
-
-    /** Command line parameters
-     public static class Parameters {
-
-    @Parameter(names = { "-w", "--workingDir" }, description = "Working directory where the topic model creates necessary files", required = true)
-    String workingDir;
-
-    @Parameter(names = { "-d", "--projectsDir" }, description = "Directory containing project subdirectories", required = true)
-    String projectsDir;
-
-    @Parameter(names = { "-i", "--iterations" }, description = "Number of iterations for the topic model")
-    int iterations = 1000;
-
-    }
-
-     public static void main(final String[] args) throws Exception {
-
-     final Parameters params = new Parameters();
-     final JCommander jc = new JCommander(params);
-
-     try {
-     jc.parse(args);
-     trainTopicModel(params.workingDir, params.projectsDir,
-     params.iterations);
-     } catch (final ParameterException e) {
-     System.out.println(e.getMessage());
-     jc.usage();
-     }
-
-     }*/
-
     /**
      * Train topic model for source code autofolding.
      * <p>

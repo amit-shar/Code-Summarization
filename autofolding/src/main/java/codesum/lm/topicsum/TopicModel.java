@@ -7,37 +7,41 @@ import java.util.List;
  * Created by amits on 30/10/15.
  */
 public class TopicModel {
-    private List<Term> termList;
-    private List<SalientFile> fileList;
-    private String projectName;
+    private Repository repository;
+    private List<Term> terms;
+    private List<SalientFile> files;
 
-    public TopicModel(String project) {
-        this.projectName = project;
-        this.termList = new ArrayList<Term>();
-        this.fileList = new ArrayList<SalientFile>();
+    public TopicModel() {
+        this.terms = new ArrayList<Term>();
+        this.files = new ArrayList<SalientFile>();
     }
 
-    public String getProjectName() {
-        return projectName;
+    public List<SalientFile> getFiles() {
+        return files;
     }
 
-    public void setProjectName(String projectName) {
-        this.projectName = projectName;
+    public void setFiles(List<SalientFile> files) {
+        this.files = files;
     }
 
-    public List<SalientFile> getFileList() {
-        return fileList;
+    public List<Term> getTerms() {
+        return terms;
     }
 
-    public void setFileList(List<SalientFile> fileList) {
-        this.fileList = fileList;
+    public void setTerms(List<Term> terms) {
+        this.terms = terms;
     }
 
-    public List<Term> getTermList() {
-        return termList;
+    public Repository getRepository() {
+        return repository;
     }
 
-    public void setTermList(List<Term> termList) {
-        this.termList = termList;
+    public void setRepository(Repository repository) {
+        this.repository = repository;
+    }
+
+    @Override
+    public String toString() {
+        return "TopicModel[repository=" + repository  + ", terms=" + terms + ", files=" + files + "]";
     }
 }

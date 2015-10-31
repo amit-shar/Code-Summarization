@@ -16,55 +16,10 @@ import java.util.Iterator;
 import java.util.List;
 
 public class ListSalientFiles {
-
-    /**
-     * Command line parameters
-     */
-    /*public static class Parameters {
-
-		@Parameter(names = { "-d", "--dir" }, description = "Directory where projects are located", required = true)
-		String workingDir;
-
-		@Parameter(names = { "-p", "--project" }, description = "Project to summarize", required = true)
-		String project;
-
-		@Parameter(names = { "-c", "--ratio" }, description = "Desired compression percentage in term of (important file*100/all files)", required = true)
-		int compressionRatio;
-
-		@Parameter(names = { "-b", "--backoffTopic" }, description = "Background topic to back off to (0-2)", validateWith = checkBackoffTopic.class)
-		int backoffTopic = 2;
-
-		@Parameter(names = { "-o", "--outFile" }, description = "Where to save salient files")
-		File outFile = null;
-		
-		@Parameter(names = { "-i", "--ignoreTests" }, description = "Whether to ignore test classes")
-		Boolean ignoreTestFiles = true;
-		
-		@Parameter(names = { "-s", "--samplerLoc" }, description = "Where to locate the serialized sampler")
-		String samplerLoc;
-	}
-	
-	public static void main(final String[] args) {
-
-		final Parameters params = new Parameters();
-		final JCommander jc = new JCommander(params);
-
-		try {
-			jc.parse(args);
-			listSalientFiles(params.workingDir, params.project,
-					params.compressionRatio, params.backoffTopic,
-					params.outFile, params.samplerLoc, params.ignoreTestFiles);
-		} catch (final ParameterException e) {
-			System.out.println(e.getMessage());
-			jc.usage();
-		}
-
-	}*/
     protected static TopicModel listSalientFiles(String workingDir, String project,
-                                                 int compressionRatio, int backoffTopic, GibbsSampler sampler, Boolean ignoreTestFiles) {
+                                                 int compressionRatio, int backoffTopic, GibbsSampler sampler, Boolean ignoreTestFiles, TopicModel topicModel) {
 
         final Settings set = new Settings();
-        TopicModel topicModel = new TopicModel(project);
 
         // Main code folder settings
         set.backoffTopicID = backoffTopic;
@@ -72,33 +27,33 @@ public class ListSalientFiles {
         set.compressionRatio = compressionRatio;
 
         // Load Topic Model
-        System.out.println("Deserializing the model..." + project);
+        System.out.println("Listing salient file of ..." + project);
 
         final int ci = sampler.getCorpus().getIndexProject(project);
         Topic projectTopic = sampler.getContentTopic(ci);
 
 
+       /* System.out.println("===============================================================");
+        System.out.println("Top 50 background 1 words");
         System.out.println("===============================================================");
-        System.out.println("Top 25 background 1 words");
-        System.out.println("===============================================================");
-        TopicSum.printTop25(sampler.getBackgroundTopic(0), sampler);
+        TopicSum.printTop50(sampler.getBackgroundTopic(0), sampler);
 
 
         System.out.println("===============================================================");
-        System.out.println("Top 25 background 2 words");
+        System.out.println("Top 50 background 2 words");
         System.out.println("===============================================================");
-        TopicSum.printTop25(sampler.getBackgroundTopic(1), sampler);
+        TopicSum.printTop50(sampler.getBackgroundTopic(1), sampler);
 
 
         System.out.println("===============================================================");
-        System.out.println("Top 25 background 3 words");
+        System.out.println("Top 50 background 3 words");
         System.out.println("===============================================================");
-        TopicSum.printTop25(sampler.getBackgroundTopic(2), sampler);
+        TopicSum.printTop50(sampler.getBackgroundTopic(2), sampler);*/
 
         System.out.println("===============================================================");
-        System.out.println("Top 25 words for  : " + project);
+        System.out.println("Top 50 words for  : " + project);
         System.out.println("===============================================================");
-        topicModel.setTermList(TopicSum.getTop25(projectTopic, sampler));
+        topicModel.setTerms(TopicSum.getTop50(projectTopic, sampler));
         System.out.println("===============================================================");
         // Get all java files in source folder
         final List<File> files = (List<File>) FileUtils.listFiles(new File(
@@ -164,20 +119,22 @@ public class ListSalientFiles {
         }
         for (i = 0; i < desiredNumberOfFiles; i++) {
             SalientFile salientFile = new SalientFile();
-            System.out.println(fileScores.get(i).score + "\t" + fileScores.get(i).filePath);
-            salientFile.setFileName(fileScores.get(i).filePath);
+            System.out.println(fileScores.get(i).score + "\t" + topicModel.getRepository().getLogin() + fileScores.get(i).filePath.replace(workingDir, "").
+                    replace(project, topicModel.getRepository().getRepoName() + "/blob/" + topicModel.getRepository().getBranch()));
+            salientFile.setFileName(topicModel.getRepository().getLogin() + fileScores.get(i).filePath.replace(workingDir, "").
+                    replace(project, topicModel.getRepository().getRepoName() +"/blob/"+topicModel.getRepository().getBranch()));
             salientFile.setKlScore(fileScores.get(i).score);
-            topicModel.getFileList().add(salientFile);
+            topicModel.getFiles().add(salientFile);
         }
-
-        System.out.println("===============================================================");
+        //Listing least salient files
+       /* System.out.println("===============================================================");
         System.out.println("Listing least salient files for project: " + project);
         System.out.println("Total files: " + fileScores.size() + "\t" + " Reducing to bottom: " + desiredNumberOfFiles);
         System.out.println("===============================================================");
         int j = fileScores.size() - 1;
         for (i = 0; i < desiredNumberOfFiles; i++) {
             System.out.println(fileScores.get(j - i).score + "\t" + fileScores.get(j - i).filePath);
-        }
+        }*/
 		/*System.out.println("\n \n===============================================================");
 		System.out.println("Next 20 important files :");
 		System.out.println("===============================================================");
@@ -205,6 +162,4 @@ public class ListSalientFiles {
         }
 
     }
-
-
 }

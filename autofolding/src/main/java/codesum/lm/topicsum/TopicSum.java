@@ -1,7 +1,5 @@
 package codesum.lm.topicsum;
 
-import org.eclipse.wst.jsdt.core.LibrarySuperType;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -76,7 +74,7 @@ public class TopicSum {
         // Background topics
         for (int b = 0; b < Topic.nBackTopics; b++) {
             System.out.printf("%n%n+++++ Top Background Topic %d tokens:", b);
-            printTop25(gibbsSampler.getBackgroundTopic(b), gibbsSampler);
+            printTop50(gibbsSampler.getBackgroundTopic(b), gibbsSampler);
             System.out.println("\nToken count: "
                     + gibbsSampler.getBackgroundTopic(b).getTotalTokenCount());
         }
@@ -87,7 +85,7 @@ public class TopicSum {
             // Project topic
             System.out.printf("%n%n%n+++++ Top %s tokens:",
                     corpus.getProject(ci));
-            printTop25(gibbsSampler.getContentTopic(ci), gibbsSampler);
+            printTop50(gibbsSampler.getContentTopic(ci), gibbsSampler);
             System.out.println("\nToken count: "
                     + gibbsSampler.getContentTopic(ci).getTotalTokenCount());
 
@@ -104,7 +102,7 @@ public class TopicSum {
             System.out.printf("%n%n+++++ Top %s, %s tokens:",
                     corpus.getProject(ci), corpus.getCluster(ci).getDoc(di)
                             .getName());
-            printTop25(gibbsSampler.getDocumentTopic(ci, di), gibbsSampler);
+            printTop50(gibbsSampler.getDocumentTopic(ci, di), gibbsSampler);
             System.out.println("\nToken count: "
                     + gibbsSampler.getDocumentTopic(ci, di)
                     .getTotalTokenCount());
@@ -135,11 +133,11 @@ public class TopicSum {
     }
 
     /**
-     * Find top 25 tokens in topic's distribution
+     * Find top 50 tokens in topic's distribution
      *
      * @param topic
      */
-    public static void printTop25(final Topic topic,
+    public static void printTop50(final Topic topic,
                                   final GibbsSampler gibbsSampler) {
 
         // Get corpus
@@ -149,8 +147,8 @@ public class TopicSum {
         final boolean[] beenUsed = new boolean[corpus.getAlphabet()
                 .nTokensCorpus()];
 
-        // for every type of word, find the largest 25
-        for (int c = 0; c < 25; c++) {
+        // for every type of word, find the largest 50
+        for (int c = 0; c < 50; c++) {
             int largest = -1;
             double plargest = 0.0;
             for (int token = 0; token < corpus.getAlphabet().nTokensCorpus(); token++) {
@@ -177,7 +175,7 @@ public class TopicSum {
         System.out.println();
     }
 
-    public static List<Term> getTop25(final Topic topic,
+    public static List<Term> getTop50(final Topic topic,
                                       final GibbsSampler gibbsSampler) {
 
         // Get corpus
@@ -188,8 +186,8 @@ public class TopicSum {
         final boolean[] beenUsed = new boolean[corpus.getAlphabet()
                 .nTokensCorpus()];
 
-        // for every type of word, find the largest 25
-        for (int c = 0; c < 25; c++) {
+        // for every type of word, find the largest 50
+        for (int c = 0; c < 50; c++) {
             int largest = -1;
             double plargest = 0.0;
             for (int token = 0; token < corpus.getAlphabet().nTokensCorpus(); token++) {

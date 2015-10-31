@@ -3,9 +3,11 @@ package codesum.lm.main;
 import codesum.lm.topicsum.Repository;
 
 import java.io.BufferedOutputStream;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.HashMap;
@@ -13,7 +15,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
-
 
 public class CodeSummarizationUtils {
 
@@ -66,7 +67,6 @@ public class CodeSummarizationUtils {
     }
 
     public static Map<String, Repository> repoNameParser(String[] projects) {
-        // String repo = "repo~Cascading~cascading-dbmigrate~576623~false~Java~master~65.zip";
         Map<String, Repository> repositoryList = new HashMap<String, Repository>();
         for (int i = 0; i < projects.length; i++) {
             String[] repoFields = projects[i].split("~");
@@ -103,7 +103,7 @@ public class CodeSummarizationUtils {
 
     public static void unzipProjects(List<String> projectsList, String projectsDir) throws IOException {
         for (String project : projectsList) {
-            CodeSummarizationUtils.unzip(projectsDir + "/" + project, projectsDir + "_unzip");
+            unzip(projectsDir + "/" + project, projectsDir + "_unzip");
         }
     }
 
@@ -114,5 +114,15 @@ public class CodeSummarizationUtils {
                 return new File(current, name).isDirectory();
             }
         });
+    }
+
+    public static void saveAsTextFile(StringBuilder stringBuilder, String desPath) {
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(new File(desPath + "topicModelJson.txt")))) {
+            bw.append(stringBuilder);
+            bw.flush();
+        } catch (IOException ioe) {
+            System.err.print("Error ocurred while writting json to file");
+            ioe.printStackTrace();
+        }
     }
 }
