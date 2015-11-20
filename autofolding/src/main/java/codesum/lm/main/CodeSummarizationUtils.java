@@ -101,9 +101,9 @@ public class CodeSummarizationUtils {
         });
     }
 
-    public static void unzipProjects(List<String> projectsList, String projectsDir) throws IOException {
+    public static void unzipProjects(List<String> projectsList, String projectsDir, String unzipPath) throws IOException {
         for (String project : projectsList) {
-            unzip(projectsDir + "/" + project, projectsDir + "_unzip");
+            unzip(projectsDir + "/" + project, unzipPath);
         }
     }
 
