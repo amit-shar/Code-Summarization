@@ -103,7 +103,11 @@ public class CodeSummarizationUtils {
 
     public static void unzipProjects(List<String> projectsList, String projectsDir, String unzipPath) throws IOException {
         for (String project : projectsList) {
-            unzip(projectsDir + "/" + project, unzipPath);
+            try {
+                unzip(projectsDir + "/" + project, unzipPath);
+            } catch (Exception ex) {
+                System.out.println("Exception while unzipping");
+            }
         }
     }
 
