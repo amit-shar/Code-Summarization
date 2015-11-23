@@ -86,7 +86,7 @@ public class CodeSummarization {
 
 
         final String[] allZip = CodeSummarizationUtils.getZipProjectList(projectsDir);
-        final String[] projectsZip =  take(allZip, 0,500);
+        final String[] projectsZip =  take(allZip, 0,10000);
         System.out.println("##################### project zip size " + projectsZip.length);
         Map<String, Repository> repoNameVsRepoProperty = CodeSummarizationUtils.repoNameParser(projectsZip);
         List<String> projectZipList = Arrays.asList(projectsZip);
@@ -103,7 +103,6 @@ public class CodeSummarization {
             final String[] projects = CodeSummarizationUtils.getUnzipProjectList(unzipProjDir);
             System.out.println("Batch" + count);
             System.out.println("==========================");
-            count++;
             GibbsSampler gibbsSampler = TrainTopicModel.trainTopicModel(workingDir, unzipDirectoryPath,
                     projects, iterations);
             System.out.println("Size of the projects for file listing is  " + gibbsSampler.getCorpus().getProjects().length);
@@ -117,7 +116,8 @@ public class CodeSummarization {
                 stringBuilder.append(gson.toJson(topicModel));
                 stringBuilder.append("\n");
             }
-            CodeSummarizationUtils.saveAsTextFile(stringBuilder, outputFilePath);
+            CodeSummarizationUtils.saveAsTextFile(stringBuilder, outputFilePath + "/" , "batch" + count);
+            count++;
             FileUtils.deleteDirectory(unzipProjDir);
         }
 

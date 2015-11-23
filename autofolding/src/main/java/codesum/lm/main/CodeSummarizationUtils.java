@@ -101,7 +101,7 @@ public class CodeSummarizationUtils {
         });
     }
 
-    public static void unzipProjects(List<String> projectsList, String projectsDir, String unzipPath) throws IOException {
+    public static void unzipProjects(List<String> projectsList, String projectsDir, String unzipPath) {
         for (String project : projectsList) {
             try {
                 unzip(projectsDir + "/" + project, unzipPath);
@@ -120,8 +120,9 @@ public class CodeSummarizationUtils {
         });
     }
 
-    public static void saveAsTextFile(StringBuilder stringBuilder, String desPath) {
-        try (BufferedWriter bw = new BufferedWriter(new FileWriter(new File(desPath + "topicModelJson.txt")))) {
+    public static void saveAsTextFile(StringBuilder stringBuilder, String desPath, String batchNumber) {
+        try (BufferedWriter bw = new BufferedWriter(new FileWriter(new File(desPath + "topicModelJson-" + batchNumber +
+                ".txt" )))) {
             bw.append(stringBuilder);
             bw.flush();
         } catch (IOException ioe) {
