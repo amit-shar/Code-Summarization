@@ -871,27 +871,31 @@ public class GibbsSampler implements Serializable {
 		final int ci = corpus.getIndexProject(project);
 		final int di = corpus.getCluster(ci).getIndexDoc(file);
 
-		// Create distribution for nodes (i.e. sentences)
-		final Distribution sentDist = new Distribution();
-		for (final int si : nodeIDs)
-			TopicSum.addToDistribution(corpus.getCluster(ci).getDoc(di)
-					.getSent(si), sentDist);
+		if(di != -1) {
+			// Create distribution for nodes (i.e. sentences)
+			final Distribution sentDist = new Distribution();
+			for (final int si : nodeIDs)
+				TopicSum.addToDistribution(corpus.getCluster(ci).getDoc(di)
+						.getSent(si), sentDist);
 
-		// Background topic to backoff to (should be Java topic)
-		final Topic jtopic = btopic[backoffTopicID];
+			// Background topic to backoff to (should be Java topic)
+			final Topic jtopic = btopic[backoffTopicID];
 
-		// Calculate relevant KLDiv type
-		double kl = 0;
-		if (KLDivType.equals("KLDivFile"))
-			kl = kldiv(dtopic[ci].get(di), sentDist, jtopic);
-		else if (KLDivType.equals("KLDivProj"))
-			kl = kldiv(ctopic[ci], sentDist, jtopic);
-		else if (KLDivType.equals("KLDivFileMinusProj"))
-			kl = kldiv(dtopic[ci].get(di), ctopic[ci], sentDist, jtopic);
-		else
-			throw new RuntimeException("Incorrect KLDIV Type");
+			// Calculate relevant KLDiv type
+			double kl = 0;
+			if (KLDivType.equals("KLDivFile"))
+				kl = kldiv(dtopic[ci].get(di), sentDist, jtopic);
+			else if (KLDivType.equals("KLDivProj"))
+				kl = kldiv(ctopic[ci], sentDist, jtopic);
+			else if (KLDivType.equals("KLDivFileMinusProj"))
+				kl = kldiv(dtopic[ci].get(di), ctopic[ci], sentDist, jtopic);
+			else
+				throw new RuntimeException("Incorrect KLDIV Type");
 
-		return kl;
+			return kl;
+		} else {
+			return Integer.MAX_VALUE;
+		}
 	}
 
 	/**

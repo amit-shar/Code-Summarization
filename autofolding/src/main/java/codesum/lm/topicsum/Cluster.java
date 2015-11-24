@@ -45,8 +45,8 @@ public class Cluster implements Serializable {
 							file.getName().length() - 1) != '~') {
 				docs[i] = new Document(file, alphabet);
 				ndocs++;
+				i++;
 			}
-			i++;
 		}
 	}
 

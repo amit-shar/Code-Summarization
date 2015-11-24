@@ -89,7 +89,8 @@ public class ListSalientFiles {
                     set.backoffTopicID, set.curProj, curFile,
                     lineNumbers);
 
-            fileScores.add(new FileScore(file.getPath(), klScore));
+            if(klScore != Integer.MAX_VALUE)
+             fileScores.add(new FileScore(file.getPath(), klScore));
         }
 
         if (ignoreTestFiles) {

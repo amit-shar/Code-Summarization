@@ -66,6 +66,16 @@ public class CodeSummarization {
 
     }
 
+    private static String[] take(String[] projects, int start, int end) {
+        String[] someProjects = new String[end - start];
+        do {
+            someProjects[start] = projects[start];
+            start = start + 1;
+        }
+        while (start < end);
+        return someProjects;
+    }
+
     private static void codeSummarization(final String workingDir,
                                           final String projectsDir,
                                           final int iterations,
@@ -73,37 +83,43 @@ public class CodeSummarization {
                                           final int backOffTopic,
                                           final boolean ignoreTestFiles, int batchSize, String outputFilePath) throws Exception {
         final String ESHEADER = "{ \"index\" : { \"_index\" : \"repotopic\", \"_type\" : \"typerepotopic\" } }";
-        final String[] projectsZip = CodeSummarizationUtils.getZipProjectList(projectsDir);
+
+
+        final String[] allZip = CodeSummarizationUtils.getZipProjectList(projectsDir);
+        final String[] projectsZip =  take(allZip, 0,10000);
+        System.out.println("##################### project zip size " + projectsZip.length);
         Map<String, Repository> repoNameVsRepoProperty = CodeSummarizationUtils.repoNameParser(projectsZip);
         List<String> projectZipList = Arrays.asList(projectsZip);
         Collections.shuffle(projectZipList); // to shuffle project list so that we get random order of projects in the list
         List<List<String>> projectsZipLists = Lists.partition(projectZipList, batchSize);
         Gson gson = new Gson();
-        StringBuilder stringBuilder = new StringBuilder();
         int count = 1;
         for (List<String> projectsList : projectsZipLists) {
-            CodeSummarizationUtils.unzipProjects(projectsList, projectsDir);
+            String unzipDirectoryPath = workingDir + "/tmp_unzip";
+            StringBuilder stringBuilder = new StringBuilder();
+            CodeSummarizationUtils.unzipProjects(projectsList, projectsDir, unzipDirectoryPath);
             // Get all projects in projects directory
-            final File unzipProjDir = new File(projectsDir + "_unzip");
+            final File unzipProjDir = new File(unzipDirectoryPath);
             final String[] projects = CodeSummarizationUtils.getUnzipProjectList(unzipProjDir);
             System.out.println("Batch" + count);
             System.out.println("==========================");
-            count++;
-            GibbsSampler gibbsSampler = TrainTopicModel.trainTopicModel(workingDir, projectsDir + "_unzip",
+            GibbsSampler gibbsSampler = TrainTopicModel.trainTopicModel(workingDir, unzipDirectoryPath,
                     projects, iterations);
             System.out.println("Size of the projects for file listing is  " + gibbsSampler.getCorpus().getProjects().length);
             for (String project : gibbsSampler.getCorpus().getProjects()) {
                 TopicModel topicModel = new TopicModel();
                 topicModel.setRepository(repoNameVsRepoProperty.get(project));
-                ListSalientFiles.listSalientFiles(projectsDir + "_unzip", project, compressionRatio,
+                ListSalientFiles.listSalientFiles(unzipDirectoryPath, project, compressionRatio,
                         backOffTopic, gibbsSampler, ignoreTestFiles, topicModel);
                 stringBuilder.append(ESHEADER);
                 stringBuilder.append("\n");
                 stringBuilder.append(gson.toJson(topicModel));
                 stringBuilder.append("\n");
             }
+            CodeSummarizationUtils.saveAsTextFile(stringBuilder, outputFilePath + "/" , "batch" + count);
+            count++;
             FileUtils.deleteDirectory(unzipProjDir);
         }
-        CodeSummarizationUtils.saveAsTextFile(stringBuilder, outputFilePath);
+
     }
 }

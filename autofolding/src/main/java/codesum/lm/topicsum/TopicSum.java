@@ -98,7 +98,8 @@ public class TopicSum {
             else
                 di = 0;
 
-            // File di topic
+            if(corpus.getCluster(ci).ndocs() >= di)
+            {  // File di topic
             System.out.printf("%n%n+++++ Top %s, %s tokens:",
                     corpus.getProject(ci), corpus.getCluster(ci).getDoc(di)
                             .getName());
@@ -129,7 +130,7 @@ public class TopicSum {
             System.out.println("alpha: " + gibbsSampler.alpha);
             System.out.println("beta_k: " + Arrays.toString(gibbsSampler.beta));
 
-        }
+        }}
     }
 
     /**
